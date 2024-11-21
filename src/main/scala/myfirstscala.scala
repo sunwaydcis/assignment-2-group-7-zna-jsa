@@ -29,7 +29,26 @@ trait Displayable: //Don't think we need this - ZN.
   def showData(): Unit
 
 //Trait to conduct all analysis operations. By right a trait should better carry abstract methods.
-trait AnalysisOperations: //--Still think it should be an object directly.
+trait AnalysisOperations //--Still think it should be an object directly.
+  //Moved all methods elsewhere
+
+//Parent class of hospital data, to remove redundancies (State name)
+case class HospitalData2(val state: String, val )
+
+abstract class HospitalData(val state: String) extends Displayable
+
+case class HospitalCapacityData(_state: String, val totalBeds: Int, val covidBeds: Int, val nonCovidBeds: Int)
+  extends HospitalData(_state):
+  override def showData() =
+    println(s"State: $state, Total Beds: $totalBeds, COVID Beds: $covidBeds, Non-COIVD Beds: $nonCovidBeds")
+
+case class HospitalAdmissionsData(_state: String, val totalAdmittedPui: Int, val totalAdmittedCovid: Int)
+  extends HospitalData(_state):
+  override def showData() =
+    println(s"State: $state, Total PUI Admissions: $totalAdmittedPui, Total Covid Admissions: $totalAdmittedCovid")
+
+
+object HospitalDataAnalysis extends AnalysisOperations: //I have an idea how to make the code more scalable for other analysis operations
   def getStateWithHighestBedCount(data: List[HospitalCapacityData]): String =
     if (data.isEmpty)
       println("Warning:The dataset is empty.")
@@ -44,23 +63,8 @@ trait AnalysisOperations: //--Still think it should be an object directly.
     val totalBeds = data.map(_.totalBeds).sum
     totalCovidBeds.toDouble / totalBeds
 
-  //def getAvgDailyAdmissions(data: List[HospitalAdmissionsData], category: String): Map[String, Double]
-
-//Parent class of hospital data, to remove redundancies (State name)
-abstract class HospitalData(val state: String) extends Displayable
-
-case class HospitalCapacityData(_state: String, val totalBeds: Int, val covidBeds: Int, val nonCovidBeds: Int)
-  extends HospitalData(_state):
-  override def showData() =
-    println(s"State: $state, Total Beds: $totalBeds, COVID Beds: $covidBeds, Non-COIVD Beds: $nonCovidBeds")
-
-case class HospitalAdmissionsData(_state: String, val totalAdmittedPui: Int, val totalAdmittedCovid: Int)
-  extends HospitalData(_state):
-  override def showData() =
-    println(s"State: $state, Total PUI Admissions: $totalAdmittedPui, Total Covid Admissions: $totalAdmittedCovid")
-
-
-object HospitalDataAnalysis extends AnalysisOperations //I have an idea how to make the code more scalable for other analysis operations
+  def getAvgDailyAdmissions(data: List[HospitalAdmissionsData], category: String): Map[String, Double] =
+    ???
 
 
 object Runner extends App:
