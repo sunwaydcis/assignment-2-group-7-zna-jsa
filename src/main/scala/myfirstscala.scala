@@ -25,15 +25,26 @@ CLASS HIERARCHY / RELATIONSHIPS
 -- Object: Hospital Data Analysis, uses trait: Analysis Operations. -- Actually, I think we can go straight to it with an object - Zn
  */
 
-trait Displayable:
+trait Displayable: //Don't think we need this - ZN.
   def showData(): Unit
 
+//Trait to conduct all analysis operations. By right a trait should better carry abstract methods.
 trait AnalysisOperations: //--Still think it should be an object directly.
-  def getStateWithHighestBedCount(data: List[HospitalCapacityData]): String
+  def getStateWithHighestBedCount(data: List[HospitalCapacityData]): String =
+    if (data.isEmpty)
+      println("Warning:The dataset is empty.")
+      return ""
+    data.maxBy(_.totalBeds).state
 
-  def getCovidBedRatio(data: List[HospitalCapacityData]): Double
+  def getCovidBedRatio(data: List[HospitalCapacityData]): Double =
+    if (data.isEmpty)
+      println("Warning: The dataset is empty.")
+      return 0.0
+    val totalCovidBeds = data.map(_.covidBeds).sum
+    val totalBeds = data.map(_.totalBeds).sum
+    totalCovidBeds.toDouble / totalBeds
 
-  def getAvgDailyAdmissions(data: List[HospitalAdmissionsData], category: String): Map[String, Double]
+  //def getAvgDailyAdmissions(data: List[HospitalAdmissionsData], category: String): Map[String, Double]
 
 //Parent class of hospital data, to remove redundancies (State name)
 abstract class HospitalData(val state: String) extends Displayable
@@ -53,4 +64,30 @@ object HospitalDataAnalysis extends AnalysisOperations //I have an idea how to m
 
 
 object Runner extends App:
-  
+  //Test Data for HospitalCapacityAnalysis
+  val datasetCapacity = List(
+    HospitalCapacityData("Johor", 500, 150, 350),
+    HospitalCapacityData("Kedah", 400, 100, 300),
+    HospitalCapacityData("Kelantan", 600, 200, 400),
+    HospitalCapacityData("Melaka", 450, 120, 330),
+    HospitalCapacityData("NegeriSembilan", 450, 120, 330),
+    HospitalCapacityData("Pahang", 450, 120, 330),
+    HospitalCapacityData("Perak", 450, 120, 330),
+    HospitalCapacityData("Perlis", 450, 120, 330),
+    HospitalCapacityData("Pulau Pinang", 450, 120, 330),
+    HospitalCapacityData("Sabah", 450, 120, 330),
+    HospitalCapacityData("Sarawak", 450, 120, 330),
+    HospitalCapacityData("Selangor", 450, 120, 330),
+    HospitalCapacityData("Terengganu", 450, 120, 330),
+    HospitalCapacityData("W.P.Kuala Lumpur", 450, 120, 330),
+    HospitalCapacityData("W.P.Labuan", 450, 120, 330)
+  )
+
+  // Testing analysis functions through trait
+  val highestBedsState = HospitalDataAnalysis.getStateWithHighestBedCount(datasetCapacity)
+  println(s"State with the highest total hospital beds: $highestBedsState")
+
+  val covidBedToTotalRatio = HospitalDataAnalysis.getCovidBedRatio(datasetCapacity)
+  println(f"Ratio of COVID-19 dedicated beds to total available hospital beds: $covidBedToTotalRatio%.2f")
+
+//GOING TO IMPROVE CODE HIERARCHY
