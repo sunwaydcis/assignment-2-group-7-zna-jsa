@@ -2,6 +2,12 @@ import java.io
 import java.time.LocalDateTime
 import scala.io.Source
 
+//Reading the file. (TESTING)
+val hopsitalDataset = Source.fromFile("C:/Users/User/Downloads/hospital.csv").getLines().toList
+
+trait CSVFileReader:
+  def readFile(source: String): Unit
+
 //Data Model to be operated on
 //Why keep all data? - Under the assumption that the DataAnalysis operations MAY increase to other fields.
 case class HospitalData( val date: LocalDateTime,
@@ -18,6 +24,10 @@ case class HospitalData( val date: LocalDateTime,
                          val hospPui: Int,
                          val hospCovid: Int,
                          val hospNonCovid: Int)
+
+object HospitalCSVFileProcessor extends CSVFileReader:
+  override def readFile("C:/Users/User/Downloads/hospital.csv": String): Unit =
+    Source.fromFile("C:/Users/User/Downloads/hospital.csv").getLines().toList
 
 //Responsible for all DataAnalysis Operations for the Hospital
 object HospitalDataAnalysis:
@@ -36,6 +46,7 @@ object HospitalDataAnalysis:
   def averageAdmissionsByCategory(data: List[HospitalData]): Double = ???
 
 object Runner extends App:
+  //Test data
   val dataset = List(
     HospitalData(LocalDateTime.now(), "Johor", 500, 300, 350, 30, 20, 50, 15, 10, 25, 5, 10, 15),
     HospitalData(LocalDateTime.now(), "Johor", 500, 150, 350, 40, 25, 65, 20, 15, 35, 10, 15, 20),
@@ -47,3 +58,6 @@ object Runner extends App:
   val ratio = HospitalDataAnalysis.getCovidBedRatio(dataset)
 
   println(s"$higheststate, \n$ratio")
+
+  //Effective running
+  hopsitalDataset.foreach(line => println(line))
