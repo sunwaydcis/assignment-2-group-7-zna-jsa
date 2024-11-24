@@ -34,4 +34,16 @@ object HospitalDataAnalysis:
     data.map(_.covidBeds).sum.toDouble / data.map(record => record.beds + record.covidBeds + record.nonCritBeds).sum.toDouble
 
   def averageAdmissionsByCategory(data: List[HospitalData]): Double = ???
-    //Need to doublecheck what we're outputting
+
+object Runner extends App:
+  val dataset = List(
+    HospitalData(LocalDateTime.now(), "Johor", 500, 300, 350, 30, 20, 50, 15, 10, 25, 5, 10, 15),
+    HospitalData(LocalDateTime.now(), "Johor", 500, 150, 350, 40, 25, 65, 20, 15, 35, 10, 15, 20),
+    HospitalData(LocalDateTime.now(), "Kedah", 400, 100, 300, 20, 15, 35, 10, 5, 15, 3, 7, 10),
+    HospitalData(LocalDateTime.now(), "Kedah", 400, 100, 300, 25, 20, 45, 12, 8, 20, 4, 9, 12)
+  )
+
+  val higheststate = HospitalDataAnalysis.getStateWithHighestBedCount(dataset)
+  val ratio = HospitalDataAnalysis.getCovidBedRatio(dataset)
+
+  println(s"$higheststate, \n$ratio")
