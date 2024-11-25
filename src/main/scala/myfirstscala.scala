@@ -5,9 +5,11 @@ import scala.io.Source
 //Reading the file. (TESTING)
 val hopsitalDataset = Source.fromFile("C:/Users/User/Downloads/hospital.csv").getLines().toList
 
-trait CSVFileReader:
-  def readFile(source: String): Unit
-  def processFile(source: String): Unit
+trait CSVFileReader[T]:
+  /** Reads the CSVFile and converts it into a list of type T.
+   *  Why? I thought it was the best approach to take.
+   */
+  def processFile(source: String): List[T]
   
 
 //Data Model to be operated on
@@ -25,11 +27,10 @@ case class HospitalData( val date: LocalDateTime,
                          val totalDischarged: Int,
                          val hospPui: Int,
                          val hospCovid: Int,
-                         val hospNonCovid: Int)
+                         val hospNonCovid: Int):
+  //Get the method to get total beds, removes the need to constantly run (record => record.beds + ...)
+  def getTotalBeds = beds+covidBeds+nonCritBeds
 
-object HospitalCSVFileProcessor extends CSVFileReader:
-  override def readFile(source: String): Unit =
-    Source.fromFile("C:/Users/User/Downloads/hospital.csv").getLines().toList
 
 //Responsible for all DataAnalysis Operations for the Hospital
 object HospitalDataAnalysis:
@@ -39,11 +40,15 @@ object HospitalDataAnalysis:
      * Runs through the list once
      * Returns whichever record has the maximum sum of beds (beds + covid beds + non-critical beds)
      */
-    data.maxBy(record => record.beds + record.covidBeds + record.nonCritBeds).state
+    data.maxBy(record => record.getTotalBeds).state
 
   def getCovidBedRatio(data: List[HospitalData]): Double =
-    //Calculates total covid beds in the entire table and divided by the sum of beds across all records (converted to double to retain decimal value after division)
-    data.map(_.covidBeds).sum.toDouble / data.map(record => record.beds + record.covidBeds + record.nonCritBeds).sum.toDouble
+    val (totalBeds, totalCovidBeds) = data.foldLeft((0, 0)) { (acc, record) =>
+      (acc._1 + record.getTotalBeds, acc._2 + record.covidBeds)
+    }
+
+    if (totalBeds == 0) 0.0
+    else totalCovidBeds.toDouble / totalBeds
 
   def averageAdmissionsByCategory(data: List[HospitalData]): Double = ???
 
