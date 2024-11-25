@@ -50,7 +50,14 @@ object HospitalDataAnalysis:
     if (totalBeds == 0) 0.0
     else totalCovidBeds.toDouble / totalBeds
 
-  def averageAdmissionsByCategory(data: List[HospitalData]): Double = ???
+  def getAverageAdmissionsByCategory(data: List[HospitalData]): Map[String, List[Double]] =
+    data.groupBy(_.state).map { (state, records) =>
+      state -> List(
+        records.map(_.covidAdmissions).sum.toDouble / records.size,
+        records.map(_.puiAdmissions).sum.toDouble / records.size,
+        records.map(_.totalAdmissions).sum.toDouble / records.size
+      )
+    }
 
 object Runner extends App:
   //Test data
@@ -63,8 +70,9 @@ object Runner extends App:
 
   val higheststate = HospitalDataAnalysis.getStateWithHighestBedCount(dataset)
   val ratio = HospitalDataAnalysis.getCovidBedRatio(dataset)
+  val averages = HospitalDataAnalysis.getAverageAdmissionsByCategory(dataset)
 
-  println(s"$higheststate, \n$ratio")
+  println(s"$higheststate, \n$ratio \n$averages")
 
   //Effective running
-  hopsitalDataset.foreach(line => println(line))
+//  hopsitalDataset.foreach(line => println(line))
