@@ -7,6 +7,8 @@ val hopsitalDataset = Source.fromFile("C:/Users/User/Downloads/hospital.csv").ge
 
 trait CSVFileReader:
   def readFile(source: String): Unit
+  def processFile(source: String): Unit
+  
 
 //Data Model to be operated on
 //Why keep all data? - Under the assumption that the DataAnalysis operations MAY increase to other fields.
@@ -26,7 +28,7 @@ case class HospitalData( val date: LocalDateTime,
                          val hospNonCovid: Int)
 
 object HospitalCSVFileProcessor extends CSVFileReader:
-  override def readFile("C:/Users/User/Downloads/hospital.csv": String): Unit =
+  override def readFile(source: String): Unit =
     Source.fromFile("C:/Users/User/Downloads/hospital.csv").getLines().toList
 
 //Responsible for all DataAnalysis Operations for the Hospital
