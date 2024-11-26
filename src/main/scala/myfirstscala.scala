@@ -1,5 +1,4 @@
 import scala.io.Source
-
 ////Reading the file. (TESTING)
 //val hospitalDataset = Source.fromFile("C:/Users/User/Downloads/hospital.csv").getLines().toList
 
@@ -8,7 +7,6 @@ trait CSVFileReader[T]:
    *  Why? I thought it was the best approach to take. It demonstrates Parametric Polymorphism
    */
   def processFile(source: String): List[T]
-  
 
 //Data Model to be operated on
 //Why keep all data? - Under the assumption that the DataAnalysis operations MAY increase to other fields.
