@@ -1,10 +1,7 @@
-import java.io
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import scala.io.Source
 
-//Reading the file. (TESTING)
-val hopsitalDataset = Source.fromFile("C:/Users/User/Downloads/hospital.csv").getLines().toList
+////Reading the file. (TESTING)
+//val hospitalDataset = Source.fromFile("C:/Users/User/Downloads/hospital.csv").getLines().toList
 
 trait CSVFileReader[T]:
   /** Reads the CSVFile and converts it into a list of type T.
@@ -16,22 +13,22 @@ trait CSVFileReader[T]:
 //Data Model to be operated on
 //Why keep all data? - Under the assumption that the DataAnalysis operations MAY increase to other fields.
 //Starting to not see a need for it
-case class HospitalData( val date: String,
-                         val state: String,
-                         val beds: Int,
-                         val covidBeds: Int,
-                         val nonCritBeds: Int,
-                         val covidAdmissions: Int,
-                         val puiAdmissions: Int,
-                         val totalAdmissions: Int,
-                         val puiDischarged: Int,
-                         val covidDischarged: Int,
-                         val totalDischarged: Int,
-                         val hospPui: Int,
-                         val hospCovid: Int,
-                         val hospNonCovid: Int):
+case class HospitalData( date: String,
+                         state: String,
+                         beds: Int,
+                         covidBeds: Int,
+                         nonCritBeds: Int,
+                         covidAdmissions: Int,
+                         puiAdmissions: Int,
+                         totalAdmissions: Int,
+                         puiDischarged: Int,
+                         covidDischarged: Int,
+                         totalDischarged: Int,
+                         hospPui: Int,
+                         hospCovid: Int,
+                         hospNonCovid: Int):
   //Get the method to get total beds, removes the need to constantly run (record => record.beds + ...)
-  def getTotalBeds = beds+covidBeds+nonCritBeds
+  def getTotalBeds: Int = beds + covidBeds + nonCritBeds
 
 //Processes File Hospital.csv ONLY.
 object HospitalCSVReader extends CSVFileReader[HospitalData]:
@@ -45,7 +42,7 @@ object HospitalCSVReader extends CSVFileReader[HospitalData]:
     recordRows.map {
       row => val fields = row.split(',').map(_.trim)
         HospitalData(
-//          date = LocalDateTime.parse(fields(headerRow.indexOf("date")), DateTimeFormatter.ofPattern("MM-dd-yyyy")),
+          // date = LocalDateTime.parse(fields(headerRow.indexOf("date")), DateTimeFormatter.ofPattern("MM-dd-yyyy")),
           date = fields(headerRow.indexOf("date")),
           state = fields(headerRow.indexOf("state")),
           beds = fields(headerRow.indexOf("beds")).toInt,
@@ -95,13 +92,14 @@ object HospitalDataAnalysis:
     /** How?
      * Group by all records by their state name
      * So far, similar to old CovidBedRatio, it uses .map (making it run through the list 4 times)
-     * It is easier to manage, but poorer performance (if the record get's any larger)
+     * It is easier to manage, but poorer performance (if the record gets any larger)
      */
     data.groupBy(_.state).map { (state, records) =>
       state -> List(
-        records.map(_.covidAdmissions).sum.toDouble / records.size,
-        records.map(_.puiAdmissions).sum.toDouble / records.size,
-        records.map(_.totalAdmissions).sum.toDouble / records.size
+        //Rounds to 2 decimal places
+        BigDecimal(records.map(_.covidAdmissions).sum.toDouble / records.size).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble,
+        BigDecimal(records.map(_.puiAdmissions).sum.toDouble / records.size).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble,
+        BigDecimal(records.map(_.totalAdmissions).sum.toDouble / records.size).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
       )
     }
 
@@ -114,13 +112,27 @@ object Runner extends App:
 //    HospitalData(LocalDateTime.now(), "Kedah", 400, 100, 300, 25, 20, 45, 12, 8, 20, 4, 9, 12)
 //  )
 
-  val dataset = HospitalCSVReader.processFile("C:/Users/User/Downloads/hospital.csv")
+  //To remove WARNING - made private
+  private val dataset = HospitalCSVReader.processFile("C:/Users/User/Downloads/hospital.csv")
 
-  val higheststate = HospitalDataAnalysis.getStateWithHighestBedCount(dataset)
+  val highestState = HospitalDataAnalysis.getStateWithHighestBedCount(dataset)
   val ratio = HospitalDataAnalysis.getCovidBedRatio(dataset)
   val averages = HospitalDataAnalysis.getAverageAdmissionsByCategory(dataset)
 
-  println(s"$higheststate, \n$ratio \n$averages")
+//  println(s"$highestState, \n$ratio \n$averages")
+  println(s"State with the highest bed count: ${HospitalDataAnalysis.getStateWithHighestBedCount(dataset)}\n" +
+    s"Average Covid to Bed Ratio overall: ${HospitalDataAnalysis.getCovidBedRatio(dataset)}")
 
-  //Effective running
-//  hopsitalDataset.foreach(line => println(line))
+  println("===========================================================================================\n" +
+    s"Average Admissions for Each State\n" +
+    "------------------------------------------------------------------------------------------\n")
+
+  //Averages block
+  HospitalDataAnalysis.getAverageAdmissionsByCategory(dataset).foreach{
+    case (state, values) =>
+      println(s"$state \nAverage Covid: ${values.head} \nAverage Pui: ${values(1)}  \nAverage Total: ${values(2)}\n"
+      + "------------------------------------------------------------------------------------------")
+  }
+
+//Effective running
+//  hospitalDataset.foreach(line => println(line))
