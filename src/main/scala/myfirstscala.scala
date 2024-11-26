@@ -35,13 +35,14 @@ object HospitalCSVReader extends CSVFileReader[HospitalData]:
   //Will process header accordingly.
   override def processFile(source: String): List[HospitalData] =
     val records = Source.fromFile(source).getLines().toList
-    val headerRow = records.head.split(',').map(_.trim)
+    val headerRow = records.head.split(',').map(_.trim)  //Get the header and prepare data parsing
     val recordRows = records.tail
 
     //Parses each line into a data field of the HospitalData
     recordRows.map {
       row => val fields = row.split(',').map(_.trim)
         HospitalData(
+          //Drawbacks: THE COLUMN MUST EXIST. Cons: Not Robust.
           // date = LocalDateTime.parse(fields(headerRow.indexOf("date")), DateTimeFormatter.ofPattern("MM-dd-yyyy")),
           date = fields(headerRow.indexOf("date")),
           state = fields(headerRow.indexOf("state")),
@@ -60,12 +61,6 @@ object HospitalCSVReader extends CSVFileReader[HospitalData]:
         )
     }
 
-
-
-
-    //Get the header and prepare data parsing
-
-
 //Responsible for all DataAnalysis Operations for the Hospital
 object HospitalDataAnalysis:
   def getStateWithHighestBedCount(data: List[HospitalData]) : String =
@@ -75,6 +70,7 @@ object HospitalDataAnalysis:
      * Returns whichever record has the maximum sum of beds (beds + covid beds + non-critical beds)
      */
     data.maxBy(record => record.getTotalBeds).state
+    //No try/catch/fail-safe needed
 
   def getCovidBedRatio(data: List[HospitalData]): Double =
     /** Use of FoldLeft
@@ -83,9 +79,7 @@ object HospitalDataAnalysis:
     val (totalBeds, totalCovidBeds) = data.foldLeft((0, 0)) { (cumulative, record) =>
       (cumulative._1 + record.getTotalBeds, cumulative._2 + record.covidBeds)
     }
-
-    //Divide-By-Zero error prevention
-    if (totalBeds == 0) 0.0
+    if (totalBeds == 0) 0.0 //Divide-By-Zero error prevention
     else totalCovidBeds.toDouble / totalBeds
 
   def getAverageAdmissionsByCategory(data: List[HospitalData]): Map[String, List[Double]] =
@@ -112,18 +106,21 @@ object Runner extends App:
 //    HospitalData(LocalDateTime.now(), "Kedah", 400, 100, 300, 25, 20, 45, 12, 8, 20, 4, 9, 12)
 //  )
 
-  //To remove WARNING - made private
+  //To remove WARNING - made private (as it is only owned by the runner object - not needed but nice)
   private val dataset = HospitalCSVReader.processFile("C:/Users/User/Downloads/hospital.csv")
 
+  //This approach can still be used - Better readability, uses memory
   val highestState = HospitalDataAnalysis.getStateWithHighestBedCount(dataset)
   val ratio = HospitalDataAnalysis.getCovidBedRatio(dataset)
   val averages = HospitalDataAnalysis.getAverageAdmissionsByCategory(dataset)
 
+  //test printing
 //  println(s"$highestState, \n$ratio \n$averages")
-  println(s"State with the highest bed count: ${HospitalDataAnalysis.getStateWithHighestBedCount(dataset)}\n" +
-    s"Average Covid to Bed Ratio overall: ${HospitalDataAnalysis.getCovidBedRatio(dataset)}")
 
-  println("===========================================================================================\n" +
+//Why this approach? Wanted to try going for Functional Programming paradigms to improve efficiency and memory usage.
+  println(s"State with the highest bed count: ${HospitalDataAnalysis.getStateWithHighestBedCount(dataset)}\n" +
+    s"Average Covid to Bed Ratio overall: ${HospitalDataAnalysis.getCovidBedRatio(dataset)}\n" +
+    "===========================================================================================\n" +
     s"Average Admissions for Each State\n" +
     "------------------------------------------------------------------------------------------\n")
 
