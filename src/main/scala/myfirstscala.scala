@@ -1,6 +1,6 @@
 import scala.io.Source
 import scala.util.Using
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
 
 case class HospitalData( date: String, //Much easier to read this way
                          state: String,
@@ -19,6 +19,7 @@ case class HospitalData( date: String, //Much easier to read this way
 
 object HospitalCSVReader: //Processes File Hospital.csv ONLY.
   def processFile(source: String): List[HospitalData] =
+    //Didn't get to explain last commit. Why use Using. Want to close file after automatically finished
     Using(Source.fromFile(source)) { source =>
       val records = source.getLines()
       val headerRow = records.next().split(',').map(_.trim).zipWithIndex.toMap // Will process header accordingly
@@ -41,66 +42,70 @@ object HospitalCSVReader: //Processes File Hospital.csv ONLY.
           hospNonCovid = fields(headerRow("hosp_noncovid")).toInt
         )
       }.toList
-    }.getOrElse {
+    }.getOrElse { //Error Handling - Return empty list if the source just cannot be used
       println(s"Error: Unable to read the file at $source.")
       List.empty
     }
 
 object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for the Hospital
-  def stateWithHighestBedCount(data: List[HospitalData]) : String =
-    if(data.isEmpty)
-      println("Warning: List is empty")
-      "Undefined"
-    else data.maxBy(_.beds).state
+  def stateWithHighestBedCount(data: List[HospitalData]) : Unit =
+    if(data.isEmpty) println(s"Warning: List is empty\n${"Undefined"}") //Prevent operating on an empty list
+    else println(s"State with largest bed count: ${data.maxBy(_.beds).state}")
 
-  def overallCovidBedRatio(data: List[HospitalData]): Double =
-    if(data.isEmpty)
-      println("Warning: List is Empty")
-      0.0
-    val (totalBeds, totalCovidBeds) = data.foldLeft((0, 0)) { (cumulative, record) =>
-      (cumulative._1 + record.beds, cumulative._2 + record.covidBeds)
-    }
-    if (totalBeds == 0)
-      println("Warning: no beds recorded (HospitalData.beds). Returning 0.0 as default")
-      0.0 //Divide-By-Zero error prevention
-    else totalCovidBeds.toDouble / totalBeds
+  def overallCovidBedRatio(data: List[HospitalData]): Unit =
+    if(data.isEmpty) println("Warning: List is Empty\n0.0") //Prevent operating on an empty list
+    else
+      val (totalBeds, totalCovidBeds) = data.foldLeft((0, 0)) { (cumulative, record) =>
+        (cumulative._1 + record.beds, cumulative._2 + record.covidBeds)
+      }
+      if (totalBeds == 0) println("Warning: no beds recorded (HospitalData.beds). \n0.0") //Prevent divide by 0 error
+      else println(s"Average Covid beds to bed ratio overall: ${totalCovidBeds.toDouble / totalBeds}")
 
   def averageAdmissionsByCategory(data: List[HospitalData]): Map[String, List[Double]] =
-    if(data.isEmpty)
-      Map("Undefined" -> List(0.0, 0.0))
+    if(data.isEmpty) Map("Undefined" -> List(0.0, 0.0)) //Prevent operating on an empty list
     else
-      data.groupBy(_.state).map { (state, records) =>
-        val totalSize = records.size
-        state -> List(
-          records.map(_.covidAdmissions).sum.toDouble / totalSize,
-          records.map(_.puiAdmissions).sum.toDouble / totalSize
-      )
-    }
+      //Use mutable map. Since each time the map is being updated, using a immutable map means creating a new collection, which is slower.
+      val cumulator = mutable.Map.empty[String, (Double, Double, Int)]
+      data.foreach { record =>
+        val state = record.state
+        val covidAdmissions = record.covidAdmissions
+        val puiAdmissions = record.puiAdmissions
+
+        cumulator.updateWith(state) {
+          case Some((covidSum, puiSum, count)) =>
+            Some((covidSum + covidAdmissions, puiSum + puiAdmissions, count + 1))
+          case None =>
+            Some((covidAdmissions, puiAdmissions, 1))
+        }
+      }
+      cumulator.map {
+        case (state, (covidSum, puiSum, count)) =>
+          state -> List(covidSum / count, puiSum / count)
+      }.toMap
+//      data.groupBy(_.state).map { (state, records) =>
+//        val totalSize = records.size
+//        state -> List(
+//          records.map(_.covidAdmissions).sum.toDouble / totalSize,
+//          records.map(_.puiAdmissions).sum.toDouble / totalSize
+//      )
+//    }
 
 @main def main(): Unit =
   val startTime = System.currentTimeMillis()
 
-  val startReadTime = System.currentTimeMillis()  //For time testing purposes: Start time
+//  val startReadTime = System.currentTimeMillis()  //For time testing purposes: Start time
   val dataset = HospitalCSVReader.processFile("C:/Users/User/Downloads/hospital.csv")
-  val endReadTime = System.currentTimeMillis()
-
-  val startMaxBedTime = System.currentTimeMillis()
-  val maxBed = HospitalDataAnalysis.stateWithHighestBedCount(dataset)
-  val endMaxBedTime = System.currentTimeMillis()
-
-  val startAverageCovidTime = System.currentTimeMillis()
-  val averageCovid = HospitalDataAnalysis.overallCovidBedRatio(dataset)
-  val endAverageCovidTime = System.currentTimeMillis()
+//  val endReadTime = System.currentTimeMillis()
 
   val startStateAverageAdmissions = System.currentTimeMillis()
   val averageAdmissions = HospitalDataAnalysis.averageAdmissionsByCategory(dataset)
   val endStateAverageAdmissions = System.currentTimeMillis()
 
-  //Why this approach? Wanted to try going for Functional Programming paradigms.
+  HospitalDataAnalysis.stateWithHighestBedCount(dataset)
+  HospitalDataAnalysis.overallCovidBedRatio(dataset)
+
   val startPrintTime = System.currentTimeMillis()
-  println(f"State with the highest bed count: ${HospitalDataAnalysis.stateWithHighestBedCount(dataset)}\n" +
-    f"Average Covid to Bed Ratio overall: ${HospitalDataAnalysis.overallCovidBedRatio(dataset)}%.2f\n" +
-    "===========================================================================================\n" +
+  println("===========================================================================================\n" +
     "Average Admissions for Each State\n" +
     "===========================================================================================\n" +
     f"${"STATE"}%20s \t| AVERAGE COVID ADMISSIONS \t| AVERAGE PUI ADMISSIONS\n"+
@@ -115,11 +120,12 @@ object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for t
 
   val endTime = System.currentTimeMillis() //For time testing purposes: End time
   println(s"Total time taken: ${(endTime - startTime) / 1000.0}") //Checks the time taken in seconds
-  println(s"Total time taken: ${(endReadTime - startReadTime) / 1000.0}") //Checks the time taken in seconds
-  println(s"Total time taken: ${(endMaxBedTime - startMaxBedTime) / 1000.0}") //Checks the time taken in seconds
-  println(s"Total time taken: ${(endAverageCovidTime - startAverageCovidTime) / 1000.0}") //Checks the time taken in seconds
-  println(s"Total time taken: ${(endStateAverageAdmissions - startStateAverageAdmissions) / 1000.0}") //Checks the time taken in seconds
-  println(s"Total time taken: ${(endPrint - startPrintTime) / 1000.0}") //Checks the time taken in seconds
+//  println(s"Total time taken: ${(endReadTime - startReadTime) / 1000.0}") //Checks the time taken in seconds (0.6 Average)
+////  println(s"Total time taken: ${(endMaxBedTime - startMaxBedTime) / 1000.0}") //Checks the time taken in seconds (0.03 Average)
+////  println(s"Total time taken: ${(endAverageCovidTime - startAverageCovidTime) / 1000.0}") //Checks the time taken in seconds (0.00...(Average))
+  println(s"Total time taken: ${(endStateAverageAdmissions - startStateAverageAdmissions) / 1000.0}") //Checks the time taken in seconds (0.1 Average)
+//  println(s"Total time taken: ${(endPrint - startPrintTime) / 1000.0}") //Checks the time taken in seconds (0.7 Average)
+//Note adding the timeMili does add time complexity to main program by roughly 0.1~0.12 seconds.
 
 
 
