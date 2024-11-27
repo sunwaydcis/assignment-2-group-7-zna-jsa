@@ -128,7 +128,7 @@ object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for t
 @main def main(): Unit =
   val dataset = HospitalCSVReader.processFile("C:/Users/User/Downloads/hospital.csv")
   val averageAdmissions = HospitalDataAnalysis.averageAdmissionsByCategory(dataset)
-  HospitalDataAnalysis.stateWithHighestBedCount(dataset)
+  HospitalDataAnalysis.calculateStateWithHighestBedCount(dataset)
   HospitalDataAnalysis.overallCovidBedRatio(dataset)
 
   println("===========================================================================================\n" +
