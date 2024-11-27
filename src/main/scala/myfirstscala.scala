@@ -81,7 +81,7 @@ object HospitalCSVReader: //Processes File Hospital.csv ONLY.
 //    }
 
 object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for the Hospital
-  def stateWithHighestBedCount(data: List[HospitalData]) : Unit =
+  def calculateStateWithHighestBedCount(data: List[HospitalData]) : Unit =
     if(data.isEmpty) println(s"Warning: List is empty\n${"Undefined"}") //Prevent operating on an empty list
     else println(s"State with largest bed count: ${data.maxBy(_.beds).state}")
 
@@ -97,7 +97,7 @@ object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for t
   def averageAdmissionsByCategory(data: List[HospitalData]): Map[String, List[Double]] =
     if(data.isEmpty) Map("Undefined" -> List(0.0, 0.0)) //Prevent operating on an empty list
     else
-      //Use mutable map. Since each time the map is being updated, using a immutable map means creating a new collection, which is slower.
+      //Use mutable map. Since each time the map is being updated, using an immutable map means creating a new collection, which is slower.
       //Source - chatGPT
       val cumulator = mutable.Map.empty[String, (Double, Double, Int)]
       data.foreach { record =>
@@ -126,41 +126,22 @@ object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for t
 //    }
 
 @main def main(): Unit =
-  val startTime = System.currentTimeMillis()
-
-//  val startReadTime = System.currentTimeMillis()  //For time testing purposes: Start time
   val dataset = HospitalCSVReader.processFile("C:/Users/User/Downloads/hospital.csv")
-//  val endReadTime = System.currentTimeMillis()
-
-  val startStateAverageAdmissions = System.currentTimeMillis()
   val averageAdmissions = HospitalDataAnalysis.averageAdmissionsByCategory(dataset)
-  val endStateAverageAdmissions = System.currentTimeMillis()
-
   HospitalDataAnalysis.stateWithHighestBedCount(dataset)
   HospitalDataAnalysis.overallCovidBedRatio(dataset)
 
-  val startPrintTime = System.currentTimeMillis()
   println("===========================================================================================\n" +
     "Average Admissions for Each State\n" +
     "===========================================================================================\n" +
     f"${"STATE"}%20s \t| AVERAGE COVID ADMISSIONS \t| AVERAGE PUI ADMISSIONS\n"+
     "===========================================================================================")
 
-  HospitalDataAnalysis.averageAdmissionsByCategory(dataset).foreach{ //Averages-println block
+  averageAdmissions.foreach{ //Averages-println block
     case (state, values) =>
       println(f"$state%20s \t| ${values.head}%24.2f \t| ${values(1)}%22.2f\n"
         + "___________________________________________________________________________________________")
   }
-  val endPrint = System.currentTimeMillis()
-
-  val endTime = System.currentTimeMillis() //For time testing purposes: End time
-  println(s"Total time taken: ${(endTime - startTime) / 1000.0}") //Checks the time taken in seconds
-//  println(s"Total time taken: ${(endReadTime - startReadTime) / 1000.0}") //Checks the time taken in seconds (0.6 Average)
-////  println(s"Total time taken: ${(endMaxBedTime - startMaxBedTime) / 1000.0}") //Checks the time taken in seconds (0.03 Average)
-////  println(s"Total time taken: ${(endAverageCovidTime - startAverageCovidTime) / 1000.0}") //Checks the time taken in seconds (0.00...(Average))
-  println(s"Total time taken: ${(endStateAverageAdmissions - startStateAverageAdmissions) / 1000.0}") //Checks the time taken in seconds (0.1 Average)
-//  println(s"Total time taken: ${(endPrint - startPrintTime) / 1000.0}") //Checks the time taken in seconds (0.7 Average)
-//Note adding the timeMili does add time complexity to main program by roughly 0.1~0.12 seconds.
 
 
 
