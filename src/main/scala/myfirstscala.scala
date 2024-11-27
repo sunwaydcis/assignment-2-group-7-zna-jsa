@@ -1,6 +1,7 @@
 import scala.io.Source
 import scala.util.Using
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 case class HospitalData( date: String, //Much easier to read this way
                          state: String,
@@ -19,13 +20,15 @@ case class HospitalData( date: String, //Much easier to read this way
 
 object HospitalCSVReader: //Processes File Hospital.csv ONLY.
   def processFile(source: String): List[HospitalData] =
-    //Didn't get to explain last commit. Why use Using. Want to close file after automatically finished
     Using(Source.fromFile(source)) { source =>
       val records = source.getLines()
-      val headerRow = records.next().split(',').map(_.trim).zipWithIndex.toMap // Will process header accordingly
-      records.map { row =>
+      val headerRow = records.next().split(',').map(_.trim).zipWithIndex.toMap
+      val recordsBuffer = ListBuffer.empty[HospitalData]
+
+      records.foreach { row =>
         val fields = row.split(',').map(_.trim)
-        HospitalData(
+
+        recordsBuffer += HospitalData(
           date = fields(headerRow("date")),
           state = fields(headerRow("state")),
           beds = fields(headerRow("beds")).toInt,
@@ -41,11 +44,41 @@ object HospitalCSVReader: //Processes File Hospital.csv ONLY.
           hospPui = fields(headerRow("hosp_pui")).toInt,
           hospNonCovid = fields(headerRow("hosp_noncovid")).toInt
         )
-      }.toList
-    }.getOrElse { //Error Handling - Return empty list if the source just cannot be used
+      }
+      recordsBuffer.toList
+    }.getOrElse{
+      //Error Handling - Return empty list if the source just cannot be used
       println(s"Error: Unable to read the file at $source.")
       List.empty
     }
+
+//    //Didn't get to explain last commit. Why use Using. Want to close file after automatically finished
+//    Using(Source.fromFile(source)) { source =>
+//      val records = source.getLines()
+//      val headerRow = records.next().split(',').map(_.trim).zipWithIndex.toMap // Will process header accordingly
+//      records.map { row =>
+//        val fields = row.split(',').map(_.trim)
+//        HospitalData(
+//          date = fields(headerRow("date")),
+//          state = fields(headerRow("state")),
+//          beds = fields(headerRow("beds")).toInt,
+//          covidBeds = fields(headerRow("beds_covid")).toInt,
+//          nonCritBeds = fields(headerRow("beds_noncrit")).toInt,
+//          covidAdmissions = fields(headerRow("admitted_covid")).toInt,
+//          puiAdmissions = fields(headerRow("admitted_pui")).toInt,
+//          totalAdmissions = fields(headerRow("admitted_total")).toInt,
+//          puiDischarged = fields(headerRow("discharged_pui")).toInt,
+//          covidDischarged = fields(headerRow("discharged_covid")).toInt,
+//          totalDischarged = fields(headerRow("discharged_total")).toInt,
+//          hospCovid = fields(headerRow("hosp_covid")).toInt,
+//          hospPui = fields(headerRow("hosp_pui")).toInt,
+//          hospNonCovid = fields(headerRow("hosp_noncovid")).toInt
+//        )
+//      }.toList
+//    }.getOrElse { //Error Handling - Return empty list if the source just cannot be used
+//      println(s"Error: Unable to read the file at $source.")
+//      List.empty
+//    }
 
 object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for the Hospital
   def stateWithHighestBedCount(data: List[HospitalData]) : Unit =
@@ -65,6 +98,7 @@ object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for t
     if(data.isEmpty) Map("Undefined" -> List(0.0, 0.0)) //Prevent operating on an empty list
     else
       //Use mutable map. Since each time the map is being updated, using a immutable map means creating a new collection, which is slower.
+      //Source - chatGPT
       val cumulator = mutable.Map.empty[String, (Double, Double, Int)]
       data.foreach { record =>
         val state = record.state
@@ -82,6 +116,7 @@ object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for t
         case (state, (covidSum, puiSum, count)) =>
           state -> List(covidSum / count, puiSum / count)
       }.toMap
+//      This is our own.
 //      data.groupBy(_.state).map { (state, records) =>
 //        val totalSize = records.size
 //        state -> List(
