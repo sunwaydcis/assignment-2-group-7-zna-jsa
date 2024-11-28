@@ -2,7 +2,7 @@ import scala.io.Source
 import scala.util.Using
 import scala.collection.mutable.ListBuffer
 
-/** 
+/**
  *  This branch is the combined efforts taken from Simplifying-The-OOP structure > Fixing2 > Fixing3, and then all of them were compiled onto the main branch.
  *  Meaning all the commits for this file is the total for those respective branches.
  */
@@ -10,6 +10,7 @@ import scala.collection.mutable.ListBuffer
 /** Why use a HospitalData case class?
  *  It makes the code slightly more understandable and manageable.
  */
+
 case class HospitalData( date: String, //Much easier to read this way
                          state: String,
                          beds: Int,
@@ -148,7 +149,7 @@ object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for t
   val endMaxBedTime = System.currentTimeMillis()
   val startRatioTime = System.currentTimeMillis()
 
-  println(s"State with the highest bed count: ${  HospitalDataAnalysis.overallCovidToBedRatio(dataset)}")
+  println(f"State with the highest bed count: ${HospitalDataAnalysis.overallCovidToBedRatio(dataset)}%.2f")
 
   //  val endRatioTime = System.currentTimeMillis()
 
