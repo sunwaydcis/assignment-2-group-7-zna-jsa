@@ -1,6 +1,5 @@
 import scala.io.Source
 import scala.util.Using
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 case class HospitalData( date: String, //Much easier to read this way
@@ -26,9 +25,8 @@ object HospitalCSVReader: //Processes File Hospital.csv ONLY.
       val headerRow = records.next().split(',').map(_.trim).zipWithIndex.toMap
       val recordsBuffer = ListBuffer.empty[HospitalData] //Why ListBuffer
 
-      records.foreach { row =>
+      records.flatMap { row =>
         val fields = row.split(',').map(_.trim)
-
         recordsBuffer += HospitalData(
           date = fields(headerRow("date")),
           state = fields(headerRow("state")),
@@ -53,34 +51,6 @@ object HospitalCSVReader: //Processes File Hospital.csv ONLY.
       List.empty
     }
 
-//    //Didn't get to explain last commit. Why use Using. Want to close file after automatically finished
-//    Using(Source.fromFile(source)) { source =>
-//      val records = source.getLines()
-//      val headerRow = records.next().split(',').map(_.trim).zipWithIndex.toMap // Will process header accordingly
-//      records.map { row =>
-//        val fields = row.split(',').map(_.trim)
-//        HospitalData(
-//          date = fields(headerRow("date")),
-//          state = fields(headerRow("state")),
-//          beds = fields(headerRow("beds")).toInt,
-//          covidBeds = fields(headerRow("beds_covid")).toInt,
-//          nonCritBeds = fields(headerRow("beds_noncrit")).toInt,
-//          covidAdmissions = fields(headerRow("admitted_covid")).toInt,
-//          puiAdmissions = fields(headerRow("admitted_pui")).toInt,
-//          totalAdmissions = fields(headerRow("admitted_total")).toInt,
-//          puiDischarged = fields(headerRow("discharged_pui")).toInt,
-//          covidDischarged = fields(headerRow("discharged_covid")).toInt,
-//          totalDischarged = fields(headerRow("discharged_total")).toInt,
-//          hospCovid = fields(headerRow("hosp_covid")).toInt,
-//          hospPui = fields(headerRow("hosp_pui")).toInt,
-//          hospNonCovid = fields(headerRow("hosp_noncovid")).toInt
-//        )
-//      }.toList
-//    }.getOrElse { //Error Handling - Return empty list if the source just cannot be used
-//      println(s"Error: Unable to read the file at $source.")
-//      List.empty
-//    }
-
 object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for the Hospital
   def calculateStateWithHighestBedCount(data: List[HospitalData]) : String =
     if(data.isEmpty) //Prevent operating on an empty list
@@ -101,28 +71,15 @@ object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for t
         0.0
       else totalCovidBeds.toDouble / totalBeds
 
-  def averageAdmissionsByCategory(data: List[HospitalData]): Map[String, List[Double]] =
-    if(data.isEmpty) Map("Undefined" -> List(0.0, 0.0)) //Prevent operating on an empty list
+  def averageAdmissionsByCategory(data: List[HospitalData]): Map[String, (Double, Double)] =
+    if(data.isEmpty) Map("Undefined" -> (0.0, 0.0)) //Prevent operating on an empty list
     else
-      //Use mutable map. Since each time the map is being updated, using an immutable map means creating a new collection, which is slower.
-      //Source - chatGPT (Not all the code)
-      val cumulator = mutable.Map.empty[String, (Double, Double, Int)]
-      data.foreach { record =>
-        val state = record.state
-        val covidAdmissions = record.covidAdmissions
-        val puiAdmissions = record.puiAdmissions
-
-        cumulator.updateWith(state) {//Using a mutable map with .update removes the need to create a new map, making the code run slightly faster
-          case Some((covidSum, puiSum, count)) =>
-            Some((covidSum + covidAdmissions, puiSum + puiAdmissions, count + 1))
-          case None =>
-            Some((covidAdmissions, puiAdmissions, 1))
-        }
+      data.groupMapReduce(_.state)(record => (record.covidAdmissions.toDouble, record.puiAdmissions.toDouble, 1)){
+        case ((covidAdmission1, puiAdmission1, recordCount1), (covidAdmission2, puiAdmission2, countAdmission2)) =>
+          (covidAdmission1 + covidAdmission2, puiAdmission1 + puiAdmission2, recordCount1 + countAdmission2)
+      }.map { case (state, (totalCovid, totalPui, count)) =>
+        state -> (totalCovid / count, totalPui / count)
       }
-      cumulator.map {
-        case (state, (covidSum, puiSum, count)) =>
-          state -> List(covidSum / count, puiSum / count)
-      }.toMap
 
 @main def main(): Unit =
   val startRunTime = System.currentTimeMillis()
