@@ -99,7 +99,7 @@ object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for t
     if(data.isEmpty) Map("Undefined" -> List(0.0, 0.0)) //Prevent operating on an empty list
     else
       //Use mutable map. Since each time the map is being updated, using an immutable map means creating a new collection, which is slower.
-      //Source - chatGPT
+      //Source - chatGPT (Not all the code)
       val cumulator = mutable.Map.empty[String, (Double, Double, Int)]
       data.foreach { record =>
         val state = record.state
