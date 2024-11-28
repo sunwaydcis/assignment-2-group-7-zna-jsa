@@ -82,18 +82,24 @@ object HospitalCSVReader: //Processes File Hospital.csv ONLY.
 //    }
 
 object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for the Hospital
-  def calculateStateWithHighestBedCount(data: List[HospitalData]) : Unit =
-    if(data.isEmpty) println(s"Warning: List is empty\n${"Undefined"}") //Prevent operating on an empty list
-    else println(s"State with largest bed count: ${data.maxBy(_.beds).state}")
+  def calculateStateWithHighestBedCount(data: List[HospitalData]) : String =
+    if(data.isEmpty) //Prevent operating on an empty list
+      println(s"Warning: List is empty")
+      "Undefined"
+    else data.maxBy(_.beds).state
 
-  def overallCovidBedRatio(data: List[HospitalData]): Unit =
-    if(data.isEmpty) println("Warning: List is Empty\n0.0") //Prevent operating on an empty list
+  def overallCovidBedRatio(data: List[HospitalData]): Double =
+    if(data.isEmpty) //Prevent operating on an empty list
+      println("Warning: List is Empty")
+      0.0
     else
       val (totalBeds, totalCovidBeds) = data.foldLeft((0, 0)) { (cumulative, record) =>
         (cumulative._1 + record.beds, cumulative._2 + record.covidBeds)
       }
-      if (totalBeds == 0) println("Warning: no beds recorded (HospitalData.beds). \n0.0") //Prevent divide by 0 error
-      else println(s"Average Covid beds to bed ratio overall: ${totalCovidBeds.toDouble / totalBeds}")
+      if (totalBeds == 0) //Prevent divide by 0 error
+        println("Warning: no beds recorded (HospitalData.beds)")
+        0.0
+      else totalCovidBeds.toDouble / totalBeds
 
   def averageAdmissionsByCategory(data: List[HospitalData]): Map[String, List[Double]] =
     if(data.isEmpty) Map("Undefined" -> List(0.0, 0.0)) //Prevent operating on an empty list
@@ -106,7 +112,7 @@ object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for t
         val covidAdmissions = record.covidAdmissions
         val puiAdmissions = record.puiAdmissions
 
-        cumulator.updateWith(state) {
+        cumulator.updateWith(state) {//Using a mutable map with .update removes the need to create a new map, making the code run slightly faster
           case Some((covidSum, puiSum, count)) =>
             Some((covidSum + covidAdmissions, puiSum + puiAdmissions, count + 1))
           case None =>
@@ -117,14 +123,6 @@ object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for t
         case (state, (covidSum, puiSum, count)) =>
           state -> List(covidSum / count, puiSum / count)
       }.toMap
-//      This is our own.
-//      data.groupBy(_.state).map { (state, records) =>
-//        val totalSize = records.size
-//        state -> List(
-//          records.map(_.covidAdmissions).sum.toDouble / totalSize,
-//          records.map(_.puiAdmissions).sum.toDouble / totalSize
-//      )
-//    }
 
 @main def main(): Unit =
   val startRunTime = System.currentTimeMillis().toDouble
@@ -138,11 +136,11 @@ object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for t
   val endAverageTime = System.currentTimeMillis().toDouble
 
   val startMaxBedTime = System.currentTimeMillis().toDouble
-  HospitalDataAnalysis.calculateStateWithHighestBedCount(dataset)
+  println(s"State with the highest bed count: ${HospitalDataAnalysis.calculateStateWithHighestBedCount(dataset)}")
   val endMaxBedTime = System.currentTimeMillis().toDouble
 
   val startRatioTime = System.currentTimeMillis().toDouble
-  HospitalDataAnalysis.overallCovidBedRatio(dataset)
+  println(s"State with the highest bed count: ${  HospitalDataAnalysis.overallCovidBedRatio(dataset)}")
   val endRatioTime = System.currentTimeMillis().toDouble
 
   val startPrintTime1 = System.currentTimeMillis().toDouble
