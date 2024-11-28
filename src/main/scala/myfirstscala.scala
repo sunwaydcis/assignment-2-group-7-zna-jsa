@@ -125,43 +125,43 @@ object HospitalDataAnalysis: //Responsible for all DataAnalysis Operations for t
       }.toMap
 
 @main def main(): Unit =
-  val startRunTime = System.currentTimeMillis().toDouble
+  val startRunTime = System.currentTimeMillis()
 
-  val startReadTime = System.currentTimeMillis().toDouble
+  val startReadTime = System.currentTimeMillis()
   val dataset = HospitalCSVReader.processFile("C:/Users/User/Downloads/hospital.csv")
-  val endReadTime = System.currentTimeMillis().toDouble
+  val endReadTime = System.currentTimeMillis()
 
-  val startAverageTime = System.currentTimeMillis().toDouble
+  val startAverageTime = System.currentTimeMillis()
   val averageAdmissions = HospitalDataAnalysis.averageAdmissionsByCategory(dataset)
-  val endAverageTime = System.currentTimeMillis().toDouble
+  val endAverageTime = System.currentTimeMillis()
 
-  val startMaxBedTime = System.currentTimeMillis().toDouble
+  val startMaxBedTime = System.currentTimeMillis()
   println(s"State with the highest bed count: ${HospitalDataAnalysis.calculateStateWithHighestBedCount(dataset)}")
-  val endMaxBedTime = System.currentTimeMillis().toDouble
+  val endMaxBedTime = System.currentTimeMillis()
 
-  val startRatioTime = System.currentTimeMillis().toDouble
+  val startRatioTime = System.currentTimeMillis()
   println(s"State with the highest bed count: ${  HospitalDataAnalysis.overallCovidBedRatio(dataset)}")
-  val endRatioTime = System.currentTimeMillis().toDouble
+  val endRatioTime = System.currentTimeMillis()
 
-  val startPrintTime1 = System.currentTimeMillis().toDouble
+  val startPrintTime1 = System.currentTimeMillis()
   println("===========================================================================================\n" +
     "Average Admissions for Each State\n" +
     "===========================================================================================\n" +
     f"${"STATE"}%20s \t| AVERAGE COVID ADMISSIONS \t| AVERAGE PUI ADMISSIONS\n"+
     "===========================================================================================")
-  val endPrintTime1 = System.currentTimeMillis().toDouble
+  val endPrintTime1 = System.currentTimeMillis()
 
-  val startPrintTime2 = System.currentTimeMillis().toDouble
+  val startPrintTime2 = System.currentTimeMillis()
   averageAdmissions.foreach{ //Averages-println block
     case (state, values) =>
       println(f"$state%20s \t| ${values.head}%24.2f \t| ${values(1)}%22.2f\n"
         + "___________________________________________________________________________________________")
   }
-  val endPrintTime2 = System.currentTimeMillis().toDouble
+  val endPrintTime2 = System.currentTimeMillis()
 
   val endRunTime = System.currentTimeMillis()
 
-  println(s"${(endRunTime - startRunTime)/1000} Run\n${(endReadTime - startReadTime)/1000} Read\n${(endAverageTime - startAverageTime)/1000} Averages\n${(endMaxBedTime - startMaxBedTime)/1000} MaxBed\n${(endRatioTime - startRatioTime)/1000} CovidRatio\n${(endPrintTime1 - startPrintTime1)/1000} Print1\n${(endPrintTime2 - startPrintTime2)/1000} Print2")
+  println(s"${(endRunTime - startRunTime)/1000.0} Run\n${(endReadTime - startReadTime)/1000.0} Read\n${(endAverageTime - startAverageTime)/1000.0} Averages\n${(endMaxBedTime - startMaxBedTime)/1000.0} MaxBed\n${(endRatioTime - startRatioTime)/1000.0} CovidRatio\n${(endPrintTime1 - startPrintTime1)/1000.0} Print1\n${(endPrintTime2 - startPrintTime2)/1000.0} Print2")
 
 
 
